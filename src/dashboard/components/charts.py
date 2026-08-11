@@ -205,25 +205,26 @@ def china_map(ranking: list[dict]) -> go.Figure | None:
     df = pd.DataFrame(ranking)
     df["score_rounded"] = df["综合得分"].round(4)
 
-    fig = go.Figure(go.Choropleth(
+    fig = px.choropleth(
+        df,
         geojson=geojson,
-        locations=df["省份"],
-        z=df["score_rounded"],
-        colorscale="Blues",
-        marker_line_width=0.5,
-        marker_line_color="#FFFFFF",
-        colorbar={"title": "综合得分", "thickness": 15, "len": 0.6},
-        hovertemplate="<b>%{location}</b><br>综合得分: %{z:.4f}<extra></extra>",
-    ))
-    fig.update_geos(
-        fitbounds="geojson",
-        visible=False,
-        projection_scale=1,
-        center={"lat": 35, "lon": 105},
+        locations="省份",
+        featureidkey="id",
+        color="score_rounded",
+        color_continuous_scale="Blues",
+        labels={"score_rounded": "综合得分"},
+        hover_name="省份",
+        hover_data={"省份": False, "score_rounded": ":.4f"},
     )
-    fig.update_layout(**LAYOUT_BASE, height=500,
-                      title={"text": "🇨🇳 省级综合得分空间分布", "font": {"size": 14, "color": FG}},
-                      margin={"l": 0, "r": 0, "t": 50, "b": 0})
+    # Don't touch update_geos at all
+    fig.update_layout(
+        **LAYOUT_BASE,
+        height=500,
+        title={"text": "🇨🇳 省级综合得分空间分布", "font": {"size": 14, "color": FG}},
+        margin={"l": 0, "r": 0, "t": 50, "b": 0},
+        coloraxis_colorbar={"title": "综合得分", "thickness": 15},
+        geo={"fitbounds": "geojson", "visible": False},
+    )
     return fig
 
 
