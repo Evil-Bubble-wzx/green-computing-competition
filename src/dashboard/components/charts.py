@@ -195,13 +195,14 @@ def moran_chart(moran_rows: list[dict]) -> go.Figure:
 # 8. 中国地图
 # ──────────────────────────────────────────────
 def china_map(ranking: list[dict]) -> go.Figure | None:
+    """使用 plotly.express.choropleth 渲染中国省级地图"""
     try:
         with open(GEOJSON_PATH) as f:
             geojson = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         return None
 
-    # 短名→全名映射（过滤港澳台和空名）
+    # 短名→全名映射
     name_map = {}
     for feat in geojson.get("features", []):
         name = feat["properties"].get("name", "")
@@ -219,16 +220,23 @@ def china_map(ranking: list[dict]) -> go.Figure | None:
     if df.empty:
         return None
 
-    fig = go.Figure(go.Choropleth(
-        geojson=geojson, locations=df["geo_name"], featureidkey="properties.name",
-        z=df["综合得分"], colorscale=[[0, "#DBEAFE"], [0.5, "#3B82F6"], [1, PRIMARY]],
-        colorbar={"title": "综合得分", "thickness": 15},
-        hovertemplate="<b>%{location}</b>: %{z:.4f}<extra></extra>",
-    ))
+    # 直接用 px.choropleth，它处理 GeoJSON 更稳定
+    fig = px.choropleth(
+        df,
+        geojson=geojson,
+        locations="geo_name",
+        featureidkey="properties.name",
+        color="综合得分",
+        color_continuous_scale=[[0, "#DBEAFE"], [0.5, "#3B82F6"], [1, PRIMARY]],
+        labels={"综合得分": "综合得分"},
+        hover_name="省份",
+        hover_data={"geo_name": False, "综合得分": ":.4f"},
+    )
     fig.update_geos(fitbounds="geojson", visible=False)
     fig.update_layout(**LAYOUT_BASE, height=480,
                       title={"text": "🇨🇳 省级综合得分空间分布", "font": {"size": 14, "color": FG}},
-                      margin={"l": 0, "r": 0, "t": 50, "b": 0})
+                      margin={"l": 0, "r": 0, "t": 50, "b": 0},
+                      coloraxis_colorbar={"title": "综合得分", "thickness": 15})
     return fig
 
 
