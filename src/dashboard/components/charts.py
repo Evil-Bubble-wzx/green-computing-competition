@@ -195,7 +195,7 @@ def moran_chart(moran_rows: list[dict]) -> go.Figure:
 # 8. 中国地图
 # ──────────────────────────────────────────────
 def china_map(ranking: list[dict]) -> go.Figure | None:
-    """用 px.choropleth 渲染中国省级填充地图"""
+    """中国省级 Choropleth 填充地图"""
     try:
         with open(GEOJSON_PATH) as f:
             geojson = json.load(f)
@@ -203,24 +203,27 @@ def china_map(ranking: list[dict]) -> go.Figure | None:
         return None
 
     df = pd.DataFrame(ranking)
+    df["score_rounded"] = df["综合得分"].round(4)
 
-    # GeoJSON 的 id 字段就是短名，ranking 的省份也是短名，直接匹配
-    fig = px.choropleth(
-        df,
+    fig = go.Figure(go.Choropleth(
         geojson=geojson,
-        locations="省份",
-        featureidkey="id",
-        color="综合得分",
-        color_continuous_scale=[[0, "#DBEAFE"], [0.5, "#3B82F6"], [1, PRIMARY]],
-        labels={"综合得分": "综合得分"},
-        hover_name="省份",
-        hover_data={"省份": False, "综合得分": ":.4f"},
+        locations=df["省份"],
+        z=df["score_rounded"],
+        colorscale="Blues",
+        marker_line_width=0.5,
+        marker_line_color="#FFFFFF",
+        colorbar={"title": "综合得分", "thickness": 15, "len": 0.6},
+        hovertemplate="<b>%{location}</b><br>综合得分: %{z:.4f}<extra></extra>",
+    ))
+    fig.update_geos(
+        fitbounds="geojson",
+        visible=False,
+        projection_scale=1,
+        center={"lat": 35, "lon": 105},
     )
-    fig.update_geos(fitbounds="geojson", visible=False)
     fig.update_layout(**LAYOUT_BASE, height=500,
                       title={"text": "🇨🇳 省级综合得分空间分布", "font": {"size": 14, "color": FG}},
-                      margin={"l": 0, "r": 0, "t": 50, "b": 0},
-                      coloraxis_colorbar={"title": "综合得分", "thickness": 15})
+                      margin={"l": 0, "r": 0, "t": 50, "b": 0})
     return fig
 
 
