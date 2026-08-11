@@ -22,6 +22,7 @@ st.subheader("🇨🇳 省级空间分布")
 m = china_map(data["ranking_2024"])
 if m:
     st.plotly_chart(m, use_container_width=True)
+    st.caption("注：台湾省、南沙群岛未做统计")
 else:
     st.warning("GeoJSON 地图数据未找到")
 
