@@ -2,7 +2,7 @@
 
 > **省域绿色算力承载能力评估与资源布局决策支持系统**
 >
-> 基于 NAT_FINAL 数据（2016–2024，31 省 × 7 维度 × 34 指标），提供智能问答、可视化分析、企划书咨询一站式服务。
+> 2016–2024，31 省 × 7 维度 × 34 指标，提供智能问答、可视化分析、企划书咨询一站式服务。
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue)](https://www.python.org/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.61%2B-red)](https://streamlit.io/)
