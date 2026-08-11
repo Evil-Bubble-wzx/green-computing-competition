@@ -42,7 +42,7 @@ def _get_pipeline():
 
 
 st.title("💬 智能问答")
-st.caption("所有数值来自数据库，严禁编造")
+st.caption("所有数值来自数据库")
 
 mode_str = st.radio("模式", ["📊 数据查询", "📄 企划书咨询"], horizontal=True)
 mode = "proposal_consult" if "企划书" in mode_str else "data_query"
