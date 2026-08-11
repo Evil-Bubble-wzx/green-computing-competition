@@ -201,14 +201,14 @@ def china_map(ranking: list[dict]) -> go.Figure | None:
     except (FileNotFoundError, json.JSONDecodeError):
         return None
 
-    # 短名→全名映射（只保留省/自治区/直辖市，过滤港澳台和空名）
+    # 短名→全名映射（过滤港澳台和空名）
     name_map = {}
     for feat in geojson.get("features", []):
         name = feat["properties"].get("name", "")
         if not name:
             continue
         short = name.replace("省", "").replace("自治区", "").replace("壮族", "").replace("回族", "").replace("维吾尔", "").replace("市", "")
-        if len(short) <= 2 or short in ("香港特别行政区", "澳门特别行政区"):
+        if not short or short in ("香港特别行政区", "澳门特别行政区", "台湾"):
             continue
         name_map[short] = name
 
@@ -221,12 +221,11 @@ def china_map(ranking: list[dict]) -> go.Figure | None:
 
     fig = go.Figure(go.Choropleth(
         geojson=geojson, locations=df["geo_name"], featureidkey="properties.name",
-        z=df["综合得分"], colorscale=[[0, "#F8FAFC"], [0.5, "#DBEAFE"], [1, PRIMARY]],
+        z=df["综合得分"], colorscale=[[0, "#DBEAFE"], [0.5, "#3B82F6"], [1, PRIMARY]],
         colorbar={"title": "综合得分", "thickness": 15},
         hovertemplate="<b>%{location}</b>: %{z:.4f}<extra></extra>",
     ))
-    fig.update_geos(fitbounds="locations", visible=True,
-                    projection_type="mercator", lataxis_range=[18, 54], lonaxis_range=[73, 135])
+    fig.update_geos(fitbounds="geojson", visible=False)
     fig.update_layout(**LAYOUT_BASE, height=480,
                       title={"text": "🇨🇳 省级综合得分空间分布", "font": {"size": 14, "color": FG}},
                       margin={"l": 0, "r": 0, "t": 50, "b": 0})

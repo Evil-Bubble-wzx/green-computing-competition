@@ -33,7 +33,9 @@ data/db/*.db
 design-system/
 
 # Office temp files
-docx/.~*
 
-# Draft data
-docx/
+# Draft data — only allow 3 essential files
+docx/*
+!docx/01_系统标准答案_Golden_Set.xlsx
+!docx/05_综合评价核心结果_NAT_FINAL.xlsx
+!docx/02_系统同步关键字段字典.xlsx
