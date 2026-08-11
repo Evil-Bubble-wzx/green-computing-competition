@@ -1,7 +1,6 @@
 """省份诊断"""
 import streamlit as st
 
-st.title("🏙️ 省份诊断")
 from src.dashboard.data_loader import get_query_engine, load_shared_data
 from src.dashboard.components.charts import radar, trend_area
 from src.core.exceptions import ProvinceNotFoundError
@@ -10,6 +9,8 @@ from src.core.exceptions import ProvinceNotFoundError
 def show():
     qe = get_query_engine()
     data = load_shared_data(qe)
+
+    st.title("🏙️ 省份诊断")
 
     province = st.selectbox("选择省份", data["provinces"], index=0)
 

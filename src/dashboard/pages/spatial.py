@@ -1,12 +1,13 @@
 """空间分析"""
 import streamlit as st
 
-st.title("🗺️ 空间分析")
 from src.dashboard.data_loader import get_query_engine, load_shared_data
 from src.dashboard.components.charts import moran_chart, china_map
 
 qe = get_query_engine()
 data = load_shared_data(qe)
+
+    st.title("🗺️ 空间分析")
 
 
 st.subheader("🌐 Global Moran's I")

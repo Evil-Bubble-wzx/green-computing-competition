@@ -19,9 +19,6 @@ def main():
     )
     inject()
 
-    with st.sidebar:
-        st.title("绿色算力智能决策助手")
-
     pg = st.navigation([
         st.Page(str(PAGES / "overview.py"), title="系统总览", icon="📊"),
         st.Page(str(PAGES / "province.py"), title="省份诊断", icon="🏙️"),

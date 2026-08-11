@@ -1,12 +1,13 @@
 """多省对比"""
 import streamlit as st
 
-st.title("🔄 多省对比")
 from src.dashboard.data_loader import get_query_engine, load_shared_data
 from src.dashboard.components.charts import multi_radar, multi_trend
 
 qe = get_query_engine()
 data = load_shared_data(qe)
+
+    st.title("🔄 多省对比")
 
 
 selected = st.multiselect(

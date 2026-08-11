@@ -1,12 +1,13 @@
 """布局决策"""
 import streamlit as st
 
-st.title("📐 布局决策")
 from src.dashboard.data_loader import get_query_engine, load_shared_data
 from src.dashboard.components.charts import LAYOUT_COLORS
 
 qe = get_query_engine()
 data = load_shared_data(qe)
+
+    st.title("📐 布局决策")
 
 layout = data["layout_summary"]
 boundary = data["boundary"]
