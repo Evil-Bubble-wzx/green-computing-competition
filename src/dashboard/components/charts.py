@@ -202,19 +202,37 @@ def china_map(ranking: list[dict]) -> go.Figure | None:
     except (FileNotFoundError, json.JSONDecodeError):
         return None
 
-    # 短名→GeoJSON properties.name 全名映射
+    # 从 properties.name 建立短名→全名映射（不依赖 feature["id"]）
+    # "北京市"→"北京", "广西壮族自治区"→"广西", "新疆维吾尔自治区"→"新疆" 等
     short_to_full = {}
     for feat in geojson.get("features", []):
-        name = feat["properties"].get("name", "")
-        if not name:
+        full = feat["properties"].get("name", "")
+        if not full:
             continue
-        short = feat.get("id", "")
-        if short and short not in ("香港特别行政区", "澳门特别行政区", "台湾"):
-            short_to_full[short] = name
+        short = (
+            full.replace("省", "")
+            .replace("自治区", "").replace("壮族", "").replace("回族", "").replace("维吾尔", "")
+            .replace("市", "")
+        )
+        if short in ("香港特别行政区", "澳门特别行政区", "台湾"):
+            continue
+        short_to_full[short] = full
 
     df = pd.DataFrame(ranking)
     df["geo_full"] = df["省份"].map(short_to_full)
+
+    # 调试：检查未匹配省份
+    unmatched = df[df["geo_full"].isna()]
+    if len(unmatched) > 0:
+        import sys
+        print(f"[china_map] WARNING: {len(unmatched)} provinces unmatched:", file=sys.stderr)
+        for p in unmatched["省份"]:
+            print(f"  - {p}", file=sys.stderr)
+
     df = df.dropna(subset=["geo_full"])
+    if df.empty:
+        return None
+
     df["score_rounded"] = df["综合得分"].round(4)
 
     fig = px.choropleth(
@@ -228,18 +246,13 @@ def china_map(ranking: list[dict]) -> go.Figure | None:
         hover_name="省份",
         hover_data={"geo_full": False, "score_rounded": ":.4f"},
     )
+    fig.update_geos(fitbounds="locations", visible=False)
     fig.update_layout(
         **LAYOUT_BASE,
         height=500,
         title={"text": "🇨🇳 省级综合得分空间分布", "font": {"size": 14, "color": FG}},
         margin={"l": 0, "r": 0, "t": 50, "b": 0},
         coloraxis_colorbar={"title": "综合得分", "thickness": 15},
-        geo={
-            "fitbounds": "locations",
-            "visible": False,
-            "lataxis": {"range": [18, 54]},
-            "lonaxis": {"range": [73, 135]},
-        },
     )
     return fig
 
