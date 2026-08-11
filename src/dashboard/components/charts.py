@@ -192,8 +192,19 @@ def moran_chart(moran_rows: list[dict]) -> go.Figure:
 
 
 # ──────────────────────────────────────────────
+# ──────────────────────────────────────────────
 # 8. 中国地图
 # ──────────────────────────────────────────────
+
+def _normalize_province(name: str) -> str:
+    """省份名标准化：北京市→北京，广西壮族自治区→广西，etc."""
+    return (
+        name.replace("省", "")
+        .replace("自治区", "").replace("壮族", "").replace("回族", "").replace("维吾尔", "")
+        .replace("市", "")
+    )
+
+
 def china_map(ranking: list[dict]) -> go.Figure | None:
     """中国省级 Choropleth 填充地图"""
     try:
@@ -202,51 +213,75 @@ def china_map(ranking: list[dict]) -> go.Figure | None:
     except (FileNotFoundError, json.JSONDecodeError):
         return None
 
-    # 从 properties.name 建立短名→全名映射（不依赖 feature["id"]）
-    # "北京市"→"北京", "广西壮族自治区"→"广西", "新疆维吾尔自治区"→"新疆" 等
-    short_to_full = {}
+    # ② 裁剪 GeoJSON：去掉海南南沙群岛（lat<10 的坐标环），避免 fitbounds 拉到赤道
+    def _clip_south_sea(features):
+        for feat in features:
+            geom = feat.get("geometry")
+            if not geom:
+                continue
+            coords = geom.get("coordinates", [])
+            if geom["type"] == "MultiPolygon":
+                new_polys = []
+                for poly in coords:
+                    rings = [ring for ring in poly if any(lat > 10 for _, lat in ring)]
+                    if rings:
+                        new_polys.append(rings)
+                if new_polys:
+                    geom["coordinates"] = new_polys
+            elif geom["type"] == "Polygon":
+                rings = [ring for ring in coords if any(lat > 10 for _, lat in ring)]
+                if rings:
+                    geom["coordinates"] = rings
+    _clip_south_sea(geojson.get("features", []))
+
+    # ① 为每个 GeoJSON feature 设置 id = 标准化后的省份名
     for feat in geojson.get("features", []):
-        full = feat["properties"].get("name", "")
-        if not full:
+        raw = feat["properties"].get("name", "")
+        normal = _normalize_province(raw) if raw else ""
+        if normal in ("香港特别行政区", "澳门特别行政区", "台湾"):
             continue
-        short = (
-            full.replace("省", "")
-            .replace("自治区", "").replace("壮族", "").replace("回族", "").replace("维吾尔", "")
-            .replace("市", "")
-        )
-        if short in ("香港特别行政区", "澳门特别行政区", "台湾"):
-            continue
-        short_to_full[short] = full
+        feat["id"] = normal
 
+    # ② ranking 也做同样的标准化
     df = pd.DataFrame(ranking)
-    df["geo_full"] = df["省份"].map(short_to_full)
+    df["province_key"] = df["省份"].apply(_normalize_province)
 
-    # 调试：检查未匹配省份
-    unmatched = df[df["geo_full"].isna()]
-    if len(unmatched) > 0:
-        import sys
-        print(f"[china_map] WARNING: {len(unmatched)} provinces unmatched:", file=sys.stderr)
-        for p in unmatched["省份"]:
-            print(f"  - {p}", file=sys.stderr)
+    # ④ 检查 score 有效性
+    if df["综合得分"].isna().any() or df["综合得分"].dtype not in ("float64", "float32"):
+        return None
 
-    df = df.dropna(subset=["geo_full"])
+    # ① 调试输出
+    import sys
+    geo_ids = {feat.get("id") for feat in geojson.get("features", []) if feat.get("id")}
+    rank_keys = set(df["province_key"])
+    matched = geo_ids & rank_keys
+    unmatched_geo = geo_ids - rank_keys
+    unmatched_rank = rank_keys - geo_ids
+    print(f"[china_map] GeoJSON: {len(geo_ids)} features, Ranking: {len(rank_keys)} provinces, Matched: {len(matched)}",
+          file=sys.stderr)
+    if unmatched_geo:
+        print(f"[china_map] GeoJSON unmatched: {unmatched_geo}", file=sys.stderr)
+    if unmatched_rank:
+        print(f"[china_map] Ranking unmatched: {unmatched_rank}", file=sys.stderr)
+        df = df[~df["province_key"].isin(unmatched_rank)]
+
     if df.empty:
         return None
 
     df["score_rounded"] = df["综合得分"].round(4)
 
+    # ③ 先用 layout 配置，geo 只放 visible
     fig = px.choropleth(
         df,
         geojson=geojson,
-        locations="geo_full",
-        featureidkey="properties.name",
+        locations="province_key",
+        featureidkey="id",
         color="score_rounded",
         color_continuous_scale="Blues",
         labels={"score_rounded": "综合得分"},
         hover_name="省份",
-        hover_data={"geo_full": False, "score_rounded": ":.4f"},
+        hover_data={"province_key": False, "score_rounded": ":.4f"},
     )
-    fig.update_geos(fitbounds="locations", visible=False)
     fig.update_layout(
         **LAYOUT_BASE,
         height=500,
@@ -254,6 +289,8 @@ def china_map(ranking: list[dict]) -> go.Figure | None:
         margin={"l": 0, "r": 0, "t": 50, "b": 0},
         coloraxis_colorbar={"title": "综合得分", "thickness": 15},
     )
+    # ⑤ update_geos 放在最后，确保不被覆盖
+    fig.update_geos(fitbounds="locations", visible=False)
     return fig
 
 
