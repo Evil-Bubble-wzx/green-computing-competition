@@ -312,8 +312,8 @@ def china_map(ranking: list[dict]) -> go.Figure | None:
         margin={"l": 0, "r": 0, "t": 50, "b": 0},
         mapbox={
             "style": "white-bg",
-            "center": {"lat": 35.5, "lon": 104.0},
-            "zoom": 2.7,
+            "center": {"lat": 36.5, "lon": 104.0},
+            "zoom": 2.5,
         },
     )
     return fig
