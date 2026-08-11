@@ -84,7 +84,7 @@
 
 - **Python** ≥ 3.10
 - **PostgreSQL** 已导入 NAT_FINAL 数据
-- **API Keys**：DeepSeek（必需）+ Qwen（必需）
+- **API Keys**：DeepSeek（必需）+ Qwen（必需）+ MiniMax（可选，企划书评审需要）
 
 ### 1. 安装依赖
 
@@ -99,6 +99,7 @@ pip install -e ".[dev]"
 ```bash
 export DEEPSEEK_API_KEY="sk-xxx"
 export QWEN_API_KEY="sk-xxx"
+export MINIMAX_API_KEY="sk-xxx"      # 可选，企划书评审需要
 ```
 
 ### 3. 初始化数据库
