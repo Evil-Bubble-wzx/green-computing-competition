@@ -249,6 +249,22 @@ python main.py mcp-review
 
 ---
 
+## 🤖 Claude Code Skills
+
+项目内置 5 个 Claude Code 技能，自动触发：
+
+| 技能 | 触发词 | 功能 |
+|------|--------|------|
+| **dev-guide** | 开发规范、coding rules、帮我写代码 | 强制执行项目开发规范：配置驱动、Factory 模式、Prompt 纪律、Golden Set 完整性 |
+| **data-guardian** | 数据校验、guardian、幻觉检查 | 验证回答数值来源 NAT_FINAL、术语合规（LISA/SHAP/LPA）、证据可追溯 |
+| **system-validator** | 验证系统、系统检查、validate system | 一键检查 7 项系统健康指标：数据库→Golden Set→模块→API→Prompt→MCP→Dashboard |
+| **proposal-pipeline** | 分析企划书、full pipeline | PDF 摄入→DB+Vector 检索→ChatEngine 分析→可选 MiniMax 评审循环 |
+| **review-loop** | 评审循环、auto revise | DeepSeek 生成→MiniMax-M3 5维评分→循环修改至 ≥8 分 |
+
+技能文件：`.claude/skills/*/SKILL.md`
+
+---
+
 ## 📁 项目结构
 
 ```
