@@ -1,0 +1,18 @@
+[theme]
+# 绿色算力智能决策助手 — 设计系统配色
+# Primary: 政府门户蓝 + 可持续能源绿
+primaryColor = "#1E40AF"
+backgroundColor = "#F8FAFC"
+secondaryBackgroundColor = "#EFF6FF"
+textColor = "#1E3A8A"
+font = "sans serif"
+
+[browser]
+gatherUsageStats = false
+
+[client]
+toolbarMode = "viewer"
+
+[server]
+maxUploadSize = 50
+enableXsrfProtection = true

@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+
+# Secrets — contains API keys, DO NOT COMMIT
+config/settings.yaml
+
+# Data (generated at runtime)
+data/db/chroma/
+data/reports/
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Temp
+*.tmp
+data/db/*.db
+
+# Claude Code internal
+.claude/
+
+# Design system (generated)
+design-system/
+
+# Office temp files
+docx/.~*
+
+# Draft data
+docx/

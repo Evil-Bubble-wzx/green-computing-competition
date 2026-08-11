@@ -1,0 +1,78 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "green-computing-advisor"
+version = "0.1.0"
+description = "省域绿色算力承载能力评估与资源布局决策支持系统 - 智能问答与可视化平台"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "Green Computing Team" }
+]
+keywords = ["green-computing", "rag", "mcp", "visualization", "province-analysis"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    # 核心
+    "pyyaml>=6.0",
+    "openai>=1.0",               # OpenAI SDK (统一 LLM / Embedding 接口)
+    # 数据层
+    "pandas>=2.0",
+    "openpyxl>=3.0",
+    "sqlalchemy>=2.0",
+    "psycopg2-binary>=2.9",      # PostgreSQL 驱动
+    # RAG
+    "pdfplumber>=0.10",
+    "jieba>=0.42",
+    "chromadb>=0.4",
+    "langchain-text-splitters>=0.3",
+    # Dashboard
+    "streamlit>=1.30",
+    "plotly>=5.0",
+    # MCP
+    "mcp>=1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "pytest-asyncio>=0.21",
+    "ruff>=0.1",
+]
+
+[project.scripts]
+green-advisor = "main:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+markers = [
+    "unit: Unit tests (fast, no external dependencies)",
+    "integration: Integration tests (may require external services)",
+    "e2e: End-to-end tests (full system tests)",
+    "llm: marks tests that require real LLM API calls",
+    "slow: Slow tests",
+]
+addopts = "-v --tb=short"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+ignore = ["E501"]

@@ -1,0 +1,146 @@
+# =============================================================================
+# 绿色算力智能决策助手 - 系统配置
+# =============================================================================
+
+# =============================================================================
+# 数据源配置
+# =============================================================================
+data:
+  # Excel 数据文件目录
+  docx_dir: "./docx"
+  # Golden Set 文件 (系统唯一标准答案)
+  golden_set: "./docx/01_系统标准答案_Golden_Set.xlsx"
+  # 综合评价核心结果 (最完整的数据底座)
+  core_results: "./docx/05_综合评价核心结果_NAT_FINAL.xlsx"
+  # 字段字典
+  field_dict: "./docx/02_系统同步关键字段字典.xlsx"
+
+  # PostgreSQL 连接配置
+  database:
+    host: "${POSTGRES_HOST:localhost}"
+    port: "${POSTGRES_PORT:5432}"
+    database: "${POSTGRES_DB:green_computing}"
+    user: "${POSTGRES_USER:postgres}"
+    password: "${POSTGRES_PASSWORD:shanseiwj530}"
+
+# =============================================================================
+# LLM 配置 (问答生成)
+# =============================================================================
+llm:
+  provider: "deepseek"       # Options: deepseek, openai, qwen
+  model: "deepseek-v4-flash"
+  api_key: "YOUR_API_KEY"
+  base_url: "https://api.deepseek.com/v1"
+  temperature: 0.0           # 问答场景用 0，保证确定性
+  max_tokens: 4096
+
+# =============================================================================
+# MiniMax 评审配置 (企划书报告评审)
+# =============================================================================
+minimax:
+  api_key: "YOUR_API_KEY"
+  base_url: "https://api.minimax.chat/v1"
+  model: "MiniMax-M3"
+
+# =============================================================================
+# Embedding 配置 (向量检索)
+# =============================================================================
+embedding:
+  provider: "qwen"           # Options: qwen, openai
+  model: "text-embedding-v3"
+  api_key: "YOUR_API_KEY.ELPLYMM.DacS.MEUCIQD4HcSnwfLf43K9K5UHbXWT-xmw8my9TQMZR4CkXj2vnwIgFjAQ7iTcQCG-my2SNgK9LamMbA340h2boTbqSUfeh9c"
+  base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+  dimensions: 1024
+
+# =============================================================================
+# 向量存储配置
+# =============================================================================
+vector_store:
+  provider: "chroma"         # Options: chroma
+  persist_directory: "./data/db/chroma"
+  collection_name: "proposal_knowledge"
+
+# =============================================================================
+# 检索配置
+# =============================================================================
+retrieval:
+  # 混合检索参数
+  db_top_k: 10               # 结构化数据库检索 Top K
+  vector_top_k: 10            # 向量检索 Top K (企划书)
+  web_top_k: 5                # 联网检索 Top K
+  fusion_top_k: 8             # 融合后最终 Top K
+  rrf_k: 60                   # RRF 融合常数
+  # 重排序
+  rerank:
+    enabled: true
+    provider: "llm"           # Options: none, llm
+
+# =============================================================================
+# 联网搜索配置
+# =============================================================================
+web_search:
+  enabled: true
+  provider: "builtin"         # Options: none, builtin, serpapi
+  max_results: 5
+  # 可信来源域名 (绿色算力相关)
+  trusted_domains:
+    - "miit.gov.cn"           # 工信部
+    - "ndrc.gov.cn"           # 国家发改委
+    - "stats.gov.cn"          # 国家统计局
+    - "cnnic.cn"              # CNNIC
+    - "nea.gov.cn"            # 国家能源局
+
+# =============================================================================
+# 摄入配置 (PDF 企划书)
+# =============================================================================
+ingestion:
+  chunk_size: 800
+  chunk_overlap: 150
+  splitter: "recursive"       # Options: recursive, semantic
+  supported_formats:
+    - ".pdf"
+    - ".docx"
+    - ".txt"
+
+# =============================================================================
+# 问答安全配置
+# =============================================================================
+chat:
+  # 数值回答严格模式: 所有数字必须来自数据库查询
+  strict_numeric_mode: true
+  # 拒绝回答越界问题 (如城市级、企业级排名)
+  reject_out_of_scope: true
+  # 回答必须附带: 年份 + 数据版本 + 来源
+  require_evidence: true
+  # 最大对话轮次
+  max_turns: 10
+
+# =============================================================================
+# 可视化配置
+# =============================================================================
+dashboard:
+  title: "省域绿色算力承载能力评估与资源布局决策支持系统"
+  data_version: "NAT_FINAL"
+  # 莫兰迪配色方案
+  color_scheme: "morandi"
+  # 地图配置
+  map:
+    province_name_field: "省份"
+    china_geojson: "./data/china_provinces.geojson"
+
+# =============================================================================
+# 可观测性配置
+# =============================================================================
+observability:
+  log_level: "INFO"
+  log_file: "./logs/system.log"
+  trace_enabled: true
+  trace_file: "./logs/traces.jsonl"
+
+# =============================================================================
+# MCP Server 配置
+# =============================================================================
+mcp:
+  server_name: "green-computing-advisor"
+  server_version: "0.1.0"
+  transport: "stdio"          # Options: stdio, sse
