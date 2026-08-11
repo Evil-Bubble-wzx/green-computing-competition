@@ -202,21 +202,32 @@ def china_map(ranking: list[dict]) -> go.Figure | None:
     except (FileNotFoundError, json.JSONDecodeError):
         return None
 
+    # 短名→GeoJSON properties.name 全名映射
+    short_to_full = {}
+    for feat in geojson.get("features", []):
+        name = feat["properties"].get("name", "")
+        if not name:
+            continue
+        short = feat.get("id", "")
+        if short and short not in ("香港特别行政区", "澳门特别行政区", "台湾"):
+            short_to_full[short] = name
+
     df = pd.DataFrame(ranking)
+    df["geo_full"] = df["省份"].map(short_to_full)
+    df = df.dropna(subset=["geo_full"])
     df["score_rounded"] = df["综合得分"].round(4)
 
     fig = px.choropleth(
         df,
         geojson=geojson,
-        locations="省份",
-        featureidkey="id",
+        locations="geo_full",
+        featureidkey="properties.name",
         color="score_rounded",
         color_continuous_scale="Blues",
         labels={"score_rounded": "综合得分"},
         hover_name="省份",
-        hover_data={"省份": False, "score_rounded": ":.4f"},
+        hover_data={"geo_full": False, "score_rounded": ":.4f"},
     )
-    # Don't touch update_geos at all
     fig.update_layout(
         **LAYOUT_BASE,
         height=500,
