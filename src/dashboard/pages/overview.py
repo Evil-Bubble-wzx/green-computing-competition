@@ -1,5 +1,7 @@
 """系统总览"""
 import streamlit as st
+
+st.title("📊 系统总览")
 from src.dashboard.data_loader import get_query_engine, load_shared_data
 from src.dashboard.components.charts import ranking_lollipop, layout_sunburst, layout_bubble
 

@@ -19,8 +19,8 @@ def main():
     )
     inject()
 
-    st.title("🌿 绿色算力智能决策助手")
-    st.caption("省域绿色算力承载能力评估与资源布局决策支持系统")
+    with st.sidebar:
+        st.title("绿色算力智能决策助手")
 
     pg = st.navigation([
         st.Page(str(PAGES / "overview.py"), title="系统总览", icon="📊"),
