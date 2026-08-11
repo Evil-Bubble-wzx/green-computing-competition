@@ -1,10 +1,12 @@
 """Dashboard 图表组件 — Plotly"""
 
-import plotly.graph_objects as go
-import plotly.express as px
-import pandas as pd
+import copy
 import json
 from pathlib import Path
+
+import pandas as pd
+import plotly.graph_objects as go
+import plotly.express as px
 
 # ── 色板 ──
 PRIMARY = "#1E40AF"
@@ -197,50 +199,123 @@ def moran_chart(moran_rows: list[dict]) -> go.Figure:
 # ──────────────────────────────────────────────
 
 def _normalize_province(name: str) -> str:
-    """省份名标准化：北京市→北京，广西壮族自治区→广西，etc."""
-    return (
-        name.replace("省", "")
-        .replace("自治区", "").replace("壮族", "").replace("回族", "").replace("维吾尔", "")
-        .replace("市", "")
-    )
+    """统一省级行政区名称：广东省→广东，新疆维吾尔自治区→新疆"""
+    if name is None:
+        return ""
+    name = str(name).strip()
+    suffixes = ["维吾尔自治区", "壮族自治区", "回族自治区", "特别行政区", "自治区", "省", "市"]
+    for suffix in suffixes:
+        if name.endswith(suffix):
+            name = name[:-len(suffix)]
+            break
+    return name.strip()
 
 
 def china_map(ranking: list[dict]) -> go.Figure | None:
-    """中国省级 Choropleth 填充地图"""
+    """中国省级 Choropleth 地图 — Choroplethmapbox, 固定视野, 不依赖 fitbounds"""
+
+    # 1. 读取 GeoJSON
     try:
-        with open(GEOJSON_PATH) as f:
-            geojson = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
+        with open(GEOJSON_PATH, "r", encoding="utf-8") as f:
+            raw_geojson = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError, OSError) as e:
+        print(f"[china_map] GeoJSON load failed: {e}")
         return None
 
-    # GeoJSON 已预处理：31省，id=标准化短名，bbox lat 18-54（海南离岛已裁剪）
+    features = raw_geojson.get("features", [])
+    if not features:
+        print("[china_map] GeoJSON contains no features")
+        return None
+
+    # 2. 处理 ranking
     df = pd.DataFrame(ranking)
-    df["province_key"] = df["省份"].apply(_normalize_province)
-
-    if df["综合得分"].isna().any():
+    required_columns = {"省份", "综合得分"}
+    if not required_columns.issubset(df.columns):
+        print("[china_map] ranking missing columns:", required_columns - set(df.columns))
         return None
 
-    df["score_rounded"] = df["综合得分"].round(4)
+    df = df.copy()
+    df["province_key"] = df["省份"].astype(str).map(_normalize_province)
+    df["综合得分"] = pd.to_numeric(df["综合得分"], errors="coerce")
+    df = df.dropna(subset=["综合得分"])
 
-    fig = px.choropleth(
-        df,
-        geojson=geojson,
-        locations="province_key",
-        featureidkey="id",
-        color="score_rounded",
-        color_continuous_scale="Blues",
-        labels={"score_rounded": "综合得分"},
-        hover_name="省份",
-        hover_data={"province_key": False, "score_rounded": ":.4f"},
-    )
+    if df.empty:
+        print("[china_map] ranking has no valid score data")
+        return None
+
+    df = df.drop_duplicates(subset=["province_key"], keep="last")
+    ranking_keys = set(df["province_key"])
+
+    # 3. 重建干净 GeoJSON：只保留 ranking 中存在的省份，id=标准化名
+    clean_features = []
+    geojson_keys = set()
+
+    for feat in features:
+        props = feat.get("properties") or {}
+        full_name = props.get("name")
+        if not full_name:
+            continue
+        province_key = _normalize_province(full_name)
+        if not province_key:
+            continue
+        geojson_keys.add(province_key)
+        if province_key not in ranking_keys:
+            continue
+        geometry = feat.get("geometry")
+        if not geometry:
+            continue
+        geometry_type = geometry.get("type")
+        if geometry_type not in ("Polygon", "MultiPolygon"):
+            print(f"[china_map] skip unsupported geometry: {full_name} -> {geometry_type}")
+            continue
+
+        new_feat = copy.deepcopy(feat)
+        new_feat["id"] = province_key
+        clean_features.append(new_feat)
+
+    clean_geojson = {"type": "FeatureCollection", "features": clean_features}
+
+    # 4. 匹配检查
+    rendered_keys = {f["id"] for f in clean_features}
+    unmatched = sorted(ranking_keys - rendered_keys)
+    print(f"[china_map] ranking={len(ranking_keys)}, geojson={len(geojson_keys)}, rendered={len(rendered_keys)}")
+    if unmatched:
+        print("[china_map] unmatched provinces:", unmatched)
+
+    if not clean_features:
+        print("[china_map] no matched GeoJSON features")
+        return None
+
+    plot_df = df[df["province_key"].isin(rendered_keys)].copy()
+    if plot_df.empty:
+        return None
+
+    plot_df["score_rounded"] = plot_df["综合得分"].round(4)
+
+    # 5. Choroplethmapbox — 不需要地图底图瓦片，GeoJSON 自渲染
+    fig = go.Figure(go.Choroplethmapbox(
+        geojson=clean_geojson,
+        locations=plot_df["province_key"],
+        z=plot_df["score_rounded"],
+        customdata=plot_df[["省份", "score_rounded"]].to_numpy(),
+        colorscale="Blues",
+        marker={"opacity": 0.88, "line": {"width": 0.8}},
+        colorbar={"title": "综合得分", "thickness": 15, "len": 0.70},
+        hovertemplate="<b>%{customdata[0]}</b><br>综合得分：%{customdata[1]:.4f}<extra></extra>",
+    ))
+
+    # 6. 固定中国视野 — 不依赖 fitbounds
     fig.update_layout(
         **LAYOUT_BASE,
         height=500,
         title={"text": "🇨🇳 省级综合得分空间分布", "font": {"size": 14, "color": FG}},
         margin={"l": 0, "r": 0, "t": 50, "b": 0},
-        coloraxis_colorbar={"title": "综合得分", "thickness": 15},
+        mapbox={
+            "style": "white-bg",
+            "center": {"lat": 35.5, "lon": 104.0},
+            "zoom": 2.7,
+        },
     )
-    fig.update_geos(fitbounds="locations", visible=False)
     return fig
 
 
