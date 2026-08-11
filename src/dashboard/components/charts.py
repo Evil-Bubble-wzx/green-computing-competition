@@ -289,8 +289,13 @@ def china_map(ranking: list[dict]) -> go.Figure | None:
         margin={"l": 0, "r": 0, "t": 50, "b": 0},
         coloraxis_colorbar={"title": "综合得分", "thickness": 15},
     )
-    # ⑤ update_geos 放在最后，确保不被覆盖
-    fig.update_geos(fitbounds="locations", visible=False)
+    # ⑤ update_geos 放在最后，用固定中国视野（不依赖 fitbounds，避免海南离岛干扰）
+    fig.update_geos(
+        visible=False,
+        projection_type="mercator",
+        center={"lat": 35, "lon": 104},
+        projection_scale=3.2,
+    )
     return fig
 
 
