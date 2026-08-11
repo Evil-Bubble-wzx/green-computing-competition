@@ -234,7 +234,12 @@ def china_map(ranking: list[dict]) -> go.Figure | None:
         title={"text": "🇨🇳 省级综合得分空间分布", "font": {"size": 14, "color": FG}},
         margin={"l": 0, "r": 0, "t": 50, "b": 0},
         coloraxis_colorbar={"title": "综合得分", "thickness": 15},
-        geo={"fitbounds": "geojson", "visible": False},
+        geo={
+            "fitbounds": "locations",
+            "visible": False,
+            "lataxis": {"range": [18, 54]},
+            "lonaxis": {"range": [73, 135]},
+        },
     )
     return fig
 
