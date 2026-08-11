@@ -258,6 +258,20 @@
 
 ---
 
+## Claude Code Skills
+
+项目内置 5 个 Claude Code 技能（`.claude/skills/`），在对话中自动触发：
+
+| 技能 | 触发条件 | 职责 |
+|------|---------|------|
+| **dev-guide** | 任何编码任务前 | 强制配置驱动、Factory 模式、Prompt 纪律、Dashboard 约定 |
+| **data-guardian** | 修改 prompt/检索/引擎后 | 10 道 Golden 题验证零幻觉、术语合规、证据追溯 |
+| **system-validator** | 演示/比赛前 | 7 项检查：DB→Golden Set→模块→API→Prompt→MCP→Dashboard |
+| **proposal-pipeline** | PDF 企划书分析 | Dashboard 上传或 CLI 双路径，DB+Vector 双通道检索 |
+| **review-loop** | 报告质量提升 | DeepSeek 生成→MiniMax-M3 5维评分→循环至 ≥8 分 |
+
+---
+
 ## 五、核心设计原则
 
 1. **数值零幻觉**: 所有数字来自数据库，LLM 只做翻译和推理。系统提示词 + _extract_evidence 双重保障。
