@@ -195,7 +195,7 @@ def moran_chart(moran_rows: list[dict]) -> go.Figure:
 # 8. 中国地图
 # ──────────────────────────────────────────────
 def china_map(ranking: list[dict]) -> go.Figure | None:
-    """使用 plotly.express.choropleth 渲染中国省级地图"""
+    """用 scatter_geo 在中国地图上按综合得分布点着色"""
     try:
         with open(GEOJSON_PATH) as f:
             geojson = json.load(f)
@@ -204,39 +204,60 @@ def china_map(ranking: list[dict]) -> go.Figure | None:
 
     # 短名→全名映射
     name_map = {}
+    centroids = {}
     for feat in geojson.get("features", []):
-        name = feat["properties"].get("name", "")
+        props = feat["properties"]
+        name = props.get("name", "")
         if not name:
             continue
         short = name.replace("省", "").replace("自治区", "").replace("壮族", "").replace("回族", "").replace("维吾尔", "").replace("市", "")
         if not short or short in ("香港特别行政区", "澳门特别行政区", "台湾"):
             continue
         name_map[short] = name
+        center = props.get("center", props.get("centroid"))
+        if center:
+            centroids[name] = center  # [lon, lat]
 
     df = pd.DataFrame(ranking)
     df["geo_name"] = df["省份"].map(name_map)
-    df = df.dropna(subset=["geo_name"])
+    df["lon"] = df["geo_name"].map(lambda n: centroids.get(n, [None, None])[0])
+    df["lat"] = df["geo_name"].map(lambda n: centroids.get(n, [None, None])[1])
+    df = df.dropna(subset=["geo_name", "lon", "lat"])
 
     if df.empty:
         return None
 
-    # 直接用 px.choropleth，它处理 GeoJSON 更稳定
-    fig = px.choropleth(
-        df,
-        geojson=geojson,
-        locations="geo_name",
-        featureidkey="properties.name",
-        color="综合得分",
-        color_continuous_scale=[[0, "#DBEAFE"], [0.5, "#3B82F6"], [1, PRIMARY]],
-        labels={"综合得分": "综合得分"},
-        hover_name="省份",
-        hover_data={"geo_name": False, "综合得分": ":.4f"},
+    fig = go.Figure(go.Scattergeo(
+        lon=df["lon"],
+        lat=df["lat"],
+        text=df["省份"] + "<br>得分: " + df["综合得分"].round(4).astype(str),
+        mode="markers+text",
+        marker={
+            "size": df["综合得分"] * 40,
+            "color": df["综合得分"],
+            "colorscale": [[0, "#DBEAFE"], [0.5, "#3B82F6"], [1, PRIMARY]],
+            "colorbar": {"title": "综合得分", "thickness": 15},
+            "line": {"width": 1, "color": "#FFFFFF"},
+            "showscale": True,
+        },
+        textfont={"size": 10, "color": FG},
+        textposition="top center",
+        hovertemplate="<b>%{text}</b><extra></extra>",
+    ))
+    fig.update_geos(
+        visible=True,
+        projection_type="natural earth",
+        showcountries=False,
+        showcoastlines=True,
+        coastlinecolor="#CBD5E1",
+        showland=True,
+        landcolor="#F8FAFC",
+        lataxis_range=[15, 55],
+        lonaxis_range=[70, 140],
     )
-    fig.update_geos(fitbounds="geojson", visible=False)
-    fig.update_layout(**LAYOUT_BASE, height=480,
+    fig.update_layout(**LAYOUT_BASE, height=500,
                       title={"text": "🇨🇳 省级综合得分空间分布", "font": {"size": 14, "color": FG}},
-                      margin={"l": 0, "r": 0, "t": 50, "b": 0},
-                      coloraxis_colorbar={"title": "综合得分", "thickness": 15})
+                      margin={"l": 0, "r": 0, "t": 50, "b": 0})
     return fig
 
 
