@@ -17,6 +17,18 @@ html, body, [class*="css"] {
     background: linear-gradient(180deg, #0F172A 0%, #1E3A5F 100%);
 }
 [data-testid="stSidebar"] * { color: #E2E8F0 !important; }
+
+/* 侧边栏大标题 — CSS ::before 插入在导航上方 */
+[data-testid="stSidebarNav"]::before {
+    content: "绿色算力智能决策助手";
+    display: block;
+    font-size: 18px;
+    font-weight: 700;
+    color: #FFFFFF;
+    text-align: center;
+    padding: 16px 12px 8px 12px;
+    letter-spacing: 1px;
+}
 [data-testid="stSidebar"] .stRadio label {
     border-radius: 8px; transition: background 0.2s; cursor: pointer;
 }
