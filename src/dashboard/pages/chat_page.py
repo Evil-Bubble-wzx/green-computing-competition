@@ -42,7 +42,7 @@ def _get_pipeline():
 
 
 st.title("💬 智能问答")
-st.caption("基于 NAT_FINAL — 所有数值来自数据库")
+st.caption("所有数值来自数据库，严禁编造")
 
 mode_str = st.radio("模式", ["📊 数据查询", "📄 企划书咨询"], horizontal=True)
 mode = "proposal_consult" if "企划书" in mode_str else "data_query"
@@ -120,7 +120,7 @@ if mode == "proposal_consult":
         - 总投资额、建设周期、预期年产值
         - 预期带动就业人数
 
-        > 💡 数据越详细，AI 匹配 NAT_FINAL 省级数据的精准度越高，可行性分析的量化依据越充分。
+        > 💡 数据越详细，AI 匹配省级评估数据的精准度越高，可行性分析的量化依据越充分。
         """)
 
 # ── 对话 ──

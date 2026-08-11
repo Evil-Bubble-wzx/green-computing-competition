@@ -1,1 +1,1 @@
-"""绿色算力 Dashboard — 基于 NAT_FINAL 数据的可视化平台"""
+"""绿色算力 Dashboard — 可视化平台"""

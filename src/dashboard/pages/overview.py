@@ -9,7 +9,7 @@ def show():
     data = load_shared_data(qe)
 
     st.title("📊 系统总览")
-    st.caption("数据版本: NAT_FINAL | 31 省 × 2016–2024 × 7 维 34 指标")
+    st.caption("31 省 × 2016–2024 × 7 维 34 指标")
 
     ranking = data["ranking_2024"]
     layout = data["layout_summary"]
