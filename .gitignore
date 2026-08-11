@@ -28,7 +28,6 @@ Thumbs.db
 data/db/*.db
 
 # Claude Code internal
-.claude/
 
 # Design system (generated)
 design-system/
