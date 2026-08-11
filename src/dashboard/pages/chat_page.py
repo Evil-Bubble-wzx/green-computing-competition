@@ -41,7 +41,6 @@ def _get_pipeline():
                              chunk_overlap=settings.ingestion.chunk_overlap)
 
 
-st.title("💬 智能问答")
 st.caption("所有数值来自数据库")
 
 mode_str = st.radio("模式", ["📊 数据查询", "📄 企划书咨询"], horizontal=True)

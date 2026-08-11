@@ -8,7 +8,6 @@ def show():
     qe = get_query_engine()
     data = load_shared_data(qe)
 
-    st.title("📊 系统总览")
     st.caption("31 省 × 2016–2024 × 7 维 34 指标")
 
     ranking = data["ranking_2024"]

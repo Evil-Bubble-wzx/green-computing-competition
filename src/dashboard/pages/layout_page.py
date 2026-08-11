@@ -6,7 +6,6 @@ from src.dashboard.components.charts import LAYOUT_COLORS
 qe = get_query_engine()
 data = load_shared_data(qe)
 
-st.title("📐 布局决策")
 layout = data["layout_summary"]
 boundary = data["boundary"]
 

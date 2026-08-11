@@ -6,7 +6,6 @@ from src.dashboard.components.charts import multi_radar, multi_trend
 qe = get_query_engine()
 data = load_shared_data(qe)
 
-st.title("🔄 多省对比")
 
 selected = st.multiselect(
     "选择省份（最多 5 个）", data["provinces"],

@@ -9,7 +9,6 @@ def show():
     qe = get_query_engine()
     data = load_shared_data(qe)
 
-    st.title("🏙️ 省份诊断")
     province = st.selectbox("选择省份", data["provinces"], index=0)
 
     try:

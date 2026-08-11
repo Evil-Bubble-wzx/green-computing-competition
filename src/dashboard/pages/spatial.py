@@ -6,7 +6,6 @@ from src.dashboard.components.charts import moran_chart, china_map
 qe = get_query_engine()
 data = load_shared_data(qe)
 
-st.title("🗺️ 空间分析")
 
 st.subheader("🌐 Global Moran's I")
 moran = qe._all('SELECT * FROM "05_综合评价核心结果_NAT_FINAL_GlobalMoran_9999" ORDER BY "年份"')
