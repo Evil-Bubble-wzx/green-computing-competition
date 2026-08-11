@@ -7,7 +7,7 @@ from src.dashboard.components.charts import moran_chart, china_map
 qe = get_query_engine()
 data = load_shared_data(qe)
 
-    st.title("🗺️ 空间分析")
+st.title("🗺️ 空间分析")
 
 
 st.subheader("🌐 Global Moran's I")
