@@ -112,7 +112,7 @@ class ChatEngine:
         )
 
     def chat_stream(self, query: str, mode: str = "data_query"):
-        """流式问答（生成器）"""
+        """流式问答（生成器）— 完整响应后提取证据"""
         classification = self._classify(query)
 
         if classification == "out_of_scope":
@@ -123,8 +123,16 @@ class ChatEngine:
         system_prompt = self._prompts.get(mode, self._prompts["data_query"])
         messages = self._build_messages(system_prompt, query, search_result)
 
+        full_answer_parts = []
         for chunk in self.llm.chat_stream(messages):
+            full_answer_parts.append(chunk.content)
             yield chunk.content
+
+        # 流式响应完成后提取证据
+        full_answer = "".join(full_answer_parts)
+        evidence = self._extract_evidence(full_answer, search_result)
+        # 将证据挂载为生成器的属性，调用方可通过 .evidence 获取
+        self._last_stream_evidence = evidence
 
     # ------------------------------------------------------------------
     # 问题分类
@@ -189,17 +197,21 @@ class ChatEngine:
     # ------------------------------------------------------------------
 
     def _extract_evidence(self, answer: str, search_result: SearchResult) -> list[dict]:
-        """从回答中提取数字，与检索结果对照"""
+        """从回答中提取所有数字（整数+浮点数），与检索结果和 DB 对照"""
         evidence = []
 
-        # 提取回答中的浮点数
-        numbers_in_answer = set(re.findall(r"\d+\.\d{2,6}", answer))
-        numbers_found = set()
+        # 提取回答中的所有数字：浮点数 + 独立整数
+        floats_in_answer = set(re.findall(r"\d+\.\d+", answer))
+        ints_in_answer = set(re.findall(r"(?<!\d\.)(?<!\d)\b\d+\b(?!\.?\d)", answer))
+        all_numbers = floats_in_answer | ints_in_answer
 
-        # 检查每个检索结果
+        # 与检索结果交叉比对
+        numbers_found: set[str] = set()
         for hit in search_result.hits:
-            hit_numbers = set(re.findall(r"\d+\.\d{2,6}", hit.content))
-            overlap = numbers_in_answer & hit_numbers
+            hit_floats = set(re.findall(r"\d+\.\d+", hit.content))
+            hit_ints = set(re.findall(r"(?<!\d\.)(?<!\d)\b\d+\b(?!\.?\d)", hit.content))
+            hit_all = hit_floats | hit_ints
+            overlap = all_numbers & hit_all
             if overlap:
                 numbers_found.update(overlap)
                 evidence.append({
@@ -210,12 +222,144 @@ class ChatEngine:
                 })
 
         # 找出无来源的数字
-        orphan_numbers = numbers_in_answer - numbers_found
+        orphan_numbers = all_numbers - numbers_found
+
+        # DB 行级追溯：对无来源数字尝试精确 DB 验证
+        if orphan_numbers:
+            db_traces = self._trace_to_db(answer)
+            for trace in db_traces:
+                num_str = str(trace.get("answer_value", ""))
+                if num_str in orphan_numbers:
+                    orphan_numbers.discard(num_str)
+                    numbers_found.add(num_str)
+                    evidence.append({
+                        "source": "database",
+                        "title": f"DB验证: {trace.get('province', '')}.{trace.get('field', '')}",
+                        "snippet": f"回答值={trace.get('answer_value')} DB值={trace.get('db_value')} 匹配={trace.get('match')}",
+                        "numbers_matched": [num_str],
+                        "db_trace": trace,
+                    })
+
+        # 孤儿数字警告
         if orphan_numbers:
             evidence.append({
                 "source": "⚠️ WARNING",
-                "title": "以下数字未在检索结果中找到来源",
+                "title": "以下数字未在检索结果或数据库中找到来源",
                 "numbers": list(orphan_numbers),
             })
 
         return evidence
+
+    def _trace_to_db(self, answer: str) -> list[dict]:
+        """将回答中的数字追溯到数据库具体行/字段
+
+        策略：
+          1. 检测回答中的省份名称
+          2. 检测回答中的字段关键词
+          3. 查询 DB 验证数字是否匹配
+        """
+        traces = []
+
+        # 31省名称列表
+        province_names = [
+            "北京", "天津", "河北", "山西", "内蒙古",
+            "辽宁", "吉林", "黑龙江",
+            "上海", "江苏", "浙江", "安徽", "福建", "江西", "山东",
+            "河南", "湖北", "湖南", "广东", "广西", "海南",
+            "重庆", "四川", "贵州", "云南", "西藏",
+            "陕西", "甘肃", "青海", "宁夏", "新疆",
+        ]
+
+        # 字段关键词 → DB 列名/查询方法
+        field_patterns = [
+            (r"(?:综合|复合)?得分", "composite_score"),
+            (r"(?:全国)?排名", "score_rank"),
+            (r"适宜度排名", "suit_rank"),
+            (r"综合适宜度", "suitability"),
+            (r"布局类型", "layout_type"),
+            (r"LPA|潜在类别", "lpa_type_name"),
+            (r"稳定性标签", "stability_label"),
+            (r"LISA", "lisa_type_2024"),
+            (r"绿色数据中心", "green_dc_count_2023"),
+            (r"枢纽", "is_hub"),
+            (r"保持.*布局概率|保持原布局", "keep_baseline_prob"),
+            (r"阶段增量", "growth"),
+            (r"需求网络", "demand_idx"),
+            (r"能源低碳", "energy_idx"),
+            (r"约束压力", "constraint_idx"),
+        ]
+
+        # 找到回答中提到的省份
+        found_provinces = [p for p in province_names if p in answer]
+
+        # 如果没找到省份，尝试通用数字验证
+        if not found_provinces:
+            # 检查是否有布局类型、计数等全局查询
+            for pattern, field in field_patterns:
+                if re.search(pattern, answer):
+                    # 提取附近的数字
+                    numbers = re.findall(r"\d+\.?\d*", answer)
+                    for num in numbers[:3]:
+                        traces.append({
+                            "province": "(全局)", "field": field,
+                            "answer_value": num, "db_value": None, "match": None,
+                            "note": "无省份上下文，无法精确追溯",
+                        })
+            return traces
+
+        # 对每个省份进行追溯
+        for province in found_provinces[:5]:  # 最多追溯5个省份
+            try:
+                summary = self.searcher.query_engine.get_province_summary(province)
+            except Exception:
+                continue
+
+            # 将 ProvinceSummary 转为 dict
+            summary_dict = {
+                "composite_score": summary.composite_score,
+                "score_rank": summary.score_rank,
+                "layout_type": summary.layout_type,
+                "lpa_type_name": summary.lpa_type_name,
+                "stability_label": summary.stability_label,
+                "lisa_type_2024": summary.lisa_type_2024,
+                "is_hub": summary.is_hub,
+                "green_dc_count_2023": summary.green_dc_count_2023,
+                "keep_baseline_prob": summary.keep_baseline_prob,
+            }
+
+            # 为检测到的字段提取数字并比对
+            for pattern, field in field_patterns:
+                if field not in summary_dict:
+                    continue
+                db_val = summary_dict[field]
+
+                # 提取该字段附近的数字
+                field_match = re.search(pattern + r".*?(\d+\.?\d*)", answer)
+                if not field_match:
+                    field_match = re.search(r"(\d+\.?\d*).*?" + pattern, answer)
+
+                if field_match:
+                    answer_num = field_match.group(1)
+                    match = self._compare_values(answer_num, db_val)
+                    traces.append({
+                        "province": province, "field": field,
+                        "answer_value": answer_num, "db_value": str(db_val),
+                        "match": match,
+                    })
+
+        return traces
+
+    @staticmethod
+    def _compare_values(answer_str: str, db_value) -> bool:
+        """比较回答中的数字与 DB 值"""
+        try:
+            answer_float = float(answer_str)
+            if isinstance(db_value, bool):
+                return (answer_float == 1.0 and db_value) or (answer_float == 0.0 and not db_value)
+            if isinstance(db_value, (int, float)):
+                return abs(answer_float - float(db_value)) < 0.01
+            if isinstance(db_value, str):
+                return answer_str in db_value or db_value in answer_str
+        except ValueError:
+            return str(db_value) in answer_str or answer_str in str(db_value)
+        return False

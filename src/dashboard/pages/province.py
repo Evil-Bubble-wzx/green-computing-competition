@@ -36,7 +36,7 @@ def show():
             st.info(f"🗺️ **LISA**: {summary.lisa_type_2024}")
 
         if summary.stability_label == "边界型":
-            st.warning(f"⚠️ {province} 属于**布局边界省份**，Bootstrap 保持率仅 {summary.keep_baseline_prob:.0%}。")
+            st.warning(f"⚠️ {province} 属于**布局边界省份**，保持原布局概率仅 {summary.keep_baseline_prob:.0%}。")
 
     except ProvinceNotFoundError:
         st.error(f"省份 '{province}' 不存在")

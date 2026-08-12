@@ -179,7 +179,7 @@ class HybridSearcher:
 
                 bp = self.qe.get_boundary_provinces()
                 if bp:
-                    bp_text = "; ".join(f"{b['province']}(保持率{b['keep_prob']:.0%})" for b in bp)
+                    bp_text = "; ".join(f"{b['province']}(保持原布局概率{b['keep_prob']:.0%})" for b in bp)
                     hits.append(SearchHit(source="database", score=0.6,
                         content=f"边界省份: {bp_text}", title="布局边界省份"))
             except Exception:
@@ -232,7 +232,22 @@ class HybridSearcher:
         return hits
 
     def _query_lpa(self, query, provinces, year, top_k) -> list[SearchHit]:
-        return []  # LPA 数据在 ORM 已移除，暂用 Golden Set 替代
+        hits = []
+        # 指定省份时，返回该省的 LPA 类型与稳定性
+        if provinces:
+            for p in provinces[:5]:
+                s = self.qe.get_province_summary(p)
+                hits.append(SearchHit(source="database", score=1.0,
+                    content=f"{s.province} LPA类型: {s.lpa_type_name}, LPA稳定性: {s.lpa_stability_label} (基准类型保持率{s.lpa_keep_rate:.1%})",
+                    title=f"{s.province} LPA 类型识别"))
+        # LPA 类型稳定性边界省份 (Bootstrap 保持率 < 60%)
+        boundary = self.qe.get_lpa_boundary_provinces()
+        if boundary:
+            content = "LPA类型不稳定省份(Bootstrap保持率<60%): " + ", ".join(
+                f"{b['province']}({b['lpa_type_name']},保持率{b['keep_rate']:.1%})" for b in boundary
+            )
+            hits.append(SearchHit(source="database", score=0.9, content=content, title="LPA 类型稳定性"))
+        return hits
 
     def _query_lisa(self, query, provinces, year, top_k) -> list[SearchHit]:
         sig = self.qe.get_significant_lisa()
@@ -244,7 +259,7 @@ class HybridSearcher:
     def _query_boundary(self, query, provinces, year, top_k) -> list[SearchHit]:
         bp = self.qe.get_boundary_provinces()
         if bp:
-            content = "布局边界省份: " + ", ".join(f"{b['province']}(保持率{b['keep_prob']:.2%})" for b in bp)
+            content = "布局边界省份: " + ", ".join(f"{b['province']}(保持原布局概率{b['keep_prob']:.2%})" for b in bp)
             return [SearchHit(source="database", score=0.9, content=content, title="边界省份")]
         return []
 

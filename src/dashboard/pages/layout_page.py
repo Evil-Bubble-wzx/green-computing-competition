@@ -46,10 +46,10 @@ if rows:
 st.subheader("⚠️ 布局边界省份")
 if boundary:
     st.dataframe(
-        [{"省份": b["province"], "布局类型": b["layout_type"], "保持率": f"{b['keep_prob']:.1%}"} for b in boundary],
+        [{"省份": b["province"], "布局类型": b["layout_type"], "保持原布局概率": f"{b['keep_prob']:.1%}"} for b in boundary],
         use_container_width=True, hide_index=True,
     )
-    st.caption("边界省份 Bootstrap 保持率 < 80%，选址建议需更谨慎。")
+    st.caption("布局边界省份保持原布局概率较低，选址建议需更谨慎。")
 
 with st.expander("📖 V2A 布局规则"):
     st.markdown("""

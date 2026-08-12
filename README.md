@@ -313,10 +313,16 @@ green-computing-competition/
 │   │   ├── report_generator.py
 │   │   └── minimax_reviewer.py
 │   │
-│   ├── evaluation/                  # 系统评估
-│   │   ├── runner.py
-│   │   ├── golden_test.py
-│   │   └── qa_quality.py
+│   ├── evaluation/                  # 五维系统评估
+│   │   ├── runner.py                #   评估编排 (H1-H5)
+│   │   ├── golden_test.py           #   H1-A Golden Set 字段一致性
+│   │   ├── lpa_validator.py         #   H1-B 稳定性/LPA 交叉验证
+│   │   ├── test_questions.py        #   共享测试题 + 标准答案
+│   │   ├── qa_quality.py            #   H2 问答质量
+│   │   ├── rag_traceability.py      #   H3 数字追溯
+│   │   ├── qa_standard.py           #   H4 标准答案准确性
+│   │   ├── dashboard_consistency.py #   H5 Dashboard-DB 一致性
+│   │   └── report.py                #   统一报告生成
 │   │
 │   ├── mcp_servers/                 # 4 个 MCP Server
 │   │   ├── data_query/              # 8 工具
@@ -359,9 +365,19 @@ green-computing-competition/
 ### 运行测试
 
 ```bash
-python main.py evaluate    # 系统级评估（Golden Set + QA + 性能）
+python main.py evaluate    # 五维系统评估（H1-H5）
 pytest tests/              # 单元测试
 ```
+
+`python main.py evaluate` 运行五维评估，综合评分 ≥85 即"系统可交付"：
+
+| 维度 | 内容 | 检查项 |
+|------|------|--------|
+| H1 数据一致性 | Golden Set 字段 + LPA 交叉验证 | 558 项 |
+| H2 问答质量 | 数值准确/术语合规/越界拒绝 | 10 题 |
+| H3 数字追溯 | 回答数字 → DB 行级验证 | 10 题 |
+| H4 标准答案 | LLM 数值 vs Golden Set | 10 题 |
+| H5 页面一致性 | Dashboard vs DB vs 跨页 | 18 项 |
 
 ### 代码质量
 

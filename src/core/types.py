@@ -31,10 +31,14 @@ class LPAType(str, Enum):
 
 
 class StabilityLabel(str, Enum):
-    """稳定性标签"""
-    HIGH = "高稳定"       # Bootstrap 保持率 ≥ 80%
-    MEDIUM = "中稳定"     # 60% ≤ 保持率 < 80%
-    BOUNDARY = "边界型"   # 保持率 < 60%
+    """布局稳定性标签 (Golden Set"内部稳定性标签"，V2A 布局门控口径)
+
+    注意: 这是布局门控稳定性(保持原布局概率)，非 LPA 类型稳定性。
+    LPA 类型稳定性是另一套口径，边界型为六省(宁夏/上海/四川/山东/青海/湖南)。
+    """
+    HIGH = "高稳定"       # 布局类型保持稳定
+    MEDIUM = "中稳定"     # 布局类型基本稳定
+    BOUNDARY = "边界型"   # 布局类型可能切换 (四川/陕西/安徽)
 
 
 class LISAType(str, Enum):
@@ -104,7 +108,7 @@ class ProvinceGoldenRecord:
     layout_type: str                        # V2A 最终布局类型
     green_dc_count_2023: int               # 2023 国家绿色数据中心数
     is_hub: bool                            # 是否国家枢纽省份
-    keep_baseline_prob: float              # Bootstrap 保持原布局概率
+    keep_baseline_prob: float              # 保持原布局概率 (V2A 布局门控)
     stability_label: str                   # 内部稳定性标签 (高稳定/中稳定/边界型)
     lisa_type_2024: str                    # 2024 修正 LISA 类型
     top5_prob: float                        # 进入 Top5 概率

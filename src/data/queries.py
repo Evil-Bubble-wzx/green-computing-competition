@@ -32,7 +32,9 @@ class ProvinceSummary:
     composite_score: float
     layout_type: str
     lpa_type_name: str = ""
-    stability_label: str = ""
+    lpa_stability_label: str = ""          # LPA 类型稳定性 (Bootstrap 口径)
+    lpa_keep_rate: float = 0.0             # LPA 基准类型保持率
+    stability_label: str = ""              # 布局门控稳定性 (Golden Set 口径)
     lisa_type_2024: str = "不显著"
     is_hub: bool = False
     green_dc_count_2023: int = 0
@@ -75,9 +77,10 @@ class QueryEngine:
         if not row:
             raise ProvinceNotFoundError(province)
 
-        # 尝试获取 LPA 类型
+        # 尝试获取 LPA 类型 + 稳定性
         lpa_row = self._one(
-            f'SELECT "类型命名" FROM "{TBL_LPA}" WHERE "省份" = :p', {"p": province}
+            f'SELECT "类型命名", "内部稳定性标签", "基准类型保持率" FROM "{TBL_LPA}" WHERE "省份" = :p',
+            {"p": province},
         )
 
         return ProvinceSummary(
@@ -86,6 +89,8 @@ class QueryEngine:
             composite_score=round(row["综合得分"], 6),
             layout_type=row["最终布局类型(V2A口径兼容)"],
             lpa_type_name=lpa_row["类型命名"] if lpa_row else "",
+            lpa_stability_label=lpa_row["内部稳定性标签"] if lpa_row and lpa_row["内部稳定性标签"] else "",
+            lpa_keep_rate=float(lpa_row["基准类型保持率"]) if lpa_row and lpa_row["基准类型保持率"] else 0.0,
             stability_label=row["内部稳定性标签"],
             lisa_type_2024=row["2024修正LISA类型"],
             is_hub=row["国家枢纽省份"] == "是",
@@ -187,6 +192,23 @@ class QueryEngine:
         )
         return [
             {"province": r["省份"], "layout_type": r["最终布局类型(V2A口径兼容)"], "keep_prob": r["保持原布局概率"]}
+            for r in rows
+        ]
+
+    def get_lpa_boundary_provinces(self) -> list[dict]:
+        """LPA 类型稳定性边界省份 (Bootstrap 基准类型保持率 < 60%，共6省)
+
+        注意: 这是 LPA 类型稳定性口径，与 get_boundary_provinces() 的布局门控口径不同。
+        """
+        rows = self._all(
+            f'SELECT "省份", "类型命名", "基准类型保持率", "内部稳定性标签" '
+            f'FROM "{TBL_LPA}" WHERE "内部稳定性标签" = :s '
+            f'ORDER BY "基准类型保持率"',
+            {"s": "边界型"},
+        )
+        return [
+            {"province": r["省份"], "lpa_type_name": r["类型命名"],
+             "keep_rate": r["基准类型保持率"], "stability_label": r["内部稳定性标签"]}
             for r in rows
         ]
 

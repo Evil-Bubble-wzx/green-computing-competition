@@ -1,5 +1,5 @@
 """
-问答质量评估
+问答质量评估 (H2)
 
 10 道测试题，评估 ChatEngine 的:
   - 数值准确率 (目标 100%)
@@ -13,94 +13,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
-
-# =========================================================================
-# 10 道标准测试题 + 期望答案中的关键词/数字
-# =========================================================================
-
-TEST_QUESTIONS = [
-    {
-        "id": "Q1",
-        "question": "江苏2024年综合得分排名第几？",
-        "mode": "data_query",
-        "expect_numbers": ["0.573", "1"],
-        "expect_keywords": ["江苏", "排名", "2024"],
-        "forbidden": ["不确定", "可能", "大约"],
-    },
-    {
-        "id": "Q2",
-        "question": "广东和浙江哪个综合得分更高？",
-        "mode": "data_query",
-        "expect_numbers": ["0.564", "0.562"],
-        "expect_keywords": ["广东"],
-        "forbidden": [],
-    },
-    {
-        "id": "Q3",
-        "question": "高适宜综合承载区有哪些省份？",
-        "mode": "data_query",
-        "expect_numbers": ["5"],
-        "expect_keywords": ["江苏", "广东", "浙江", "北京", "上海"],
-        "forbidden": [],
-    },
-    {
-        "id": "Q4",
-        "question": "北京历年综合得分趋势如何？",
-        "mode": "data_query",
-        "expect_numbers": ["0."],
-        "expect_keywords": ["2016", "2024", "上升", "增长"],
-        "forbidden": [],
-    },
-    {
-        "id": "Q5",
-        "question": "布局边界省份有哪些？",
-        "mode": "data_query",
-        "expect_numbers": [],
-        "expect_keywords": ["四川", "边界"],
-        "forbidden": [],
-    },
-    {
-        "id": "Q6",
-        "question": "杭州2025年数据中心的发展趋势预测",
-        "mode": "data_query",
-        "expect_numbers": [],
-        "expect_keywords": [],
-        "forbidden": [],
-        "should_reject": True,
-    },
-    {
-        "id": "Q7",
-        "question": "LISA显著省份有哪些？",
-        "mode": "data_query",
-        "expect_numbers": [],
-        "expect_keywords": ["上海", "江苏", "内蒙古", "广东", "福建", "探索性"],
-        "forbidden": ["确定性", "显著集聚"],
-    },
-    {
-        "id": "Q8",
-        "question": "贵州属于什么布局类型？",
-        "mode": "data_query",
-        "expect_numbers": [],
-        "expect_keywords": ["能源低碳优势承接区"],
-        "forbidden": [],
-    },
-    {
-        "id": "Q9",
-        "question": "什么因素影响绿色算力得分？",
-        "mode": "data_query",
-        "expect_numbers": ["7"],
-        "expect_keywords": ["维度", "指标", "评价"],
-        "forbidden": [],
-    },
-    {
-        "id": "Q10",
-        "question": "哪些省份适合建绿色数据中心？",
-        "mode": "data_query",
-        "expect_numbers": [],
-        "expect_keywords": ["高适宜", "能源", "布局"],
-        "forbidden": [],
-    },
-]
+from src.evaluation.test_questions import TEST_QUESTIONS
 
 
 @dataclass

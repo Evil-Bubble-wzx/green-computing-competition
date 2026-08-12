@@ -196,7 +196,7 @@ def register_all(handler, db_manager: DatabaseManager | None, query_engine: Quer
 
     handler.register_tool(
         "get_boundary_provinces",
-        "获取布局类型不稳定的边界省份（保持率 < 80%）",
+        "获取布局边界省份（保持原布局概率较低）",
         {"type": "object", "properties": {}, "required": []},
         get_boundary_provinces,
     )

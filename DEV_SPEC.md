@@ -1,6 +1,6 @@
 # DEV_SPEC — 绿色算力智能决策助手 开发规格文档
 
-> 版本: v1.1.0 | 更新: 2026-08-11
+> 版本: v1.2.0 | 更新: 2026-08-13
 
 ---
 
@@ -230,18 +230,34 @@
 
 ## Phase H: 评估体系与 E2E ✅
 
-### H1 - Golden Set 一致性测试 ✅
-- [x] 31 省 × 17 字段自动校验
+五维系统评估，`python main.py evaluate` 一键运行，综合评分 ≥85 即"系统可交付"。
+
+### H1 - 数据一致性（558 项检查）✅
+- [x] H1-A: Golden Set 13 字段 × 31 省 = 403 项逐字段比对
+- [x] H1-B: LPA 交叉验证 5 项 × 31 省 = 155 项（LPA 类型命名 + 布局稳定性标签 + 保持原布局概率 + LPA 稳定性标签 + LPA 基准类型保持率）
 - [x] `src/evaluation/golden_test.py` — GoldenSetValidator
+- [x] `src/evaluation/lpa_validator.py` — LPAValidator
 
 ### H2 - 问答质量评估 ✅
-- [x] 10 道标准问题的 QA 质量评估
-- [x] 数值准确率 / 术语合规 / 证据可追溯率
+- [x] 10 道标准问题：数值准确率 / 术语合规 / 越界拒绝率 / 证据可追溯率
 - [x] `src/evaluation/qa_quality.py` — QAQualityEvaluator
 
-### H3 - 性能测试 ✅
-- [x] 问答响应时间基准
-- [x] `src/evaluation/runner.py` — run_all()
+### H3 - RAG 数字追溯 ✅
+- [x] 期望数字 → DB 行级验证 → 证据链检查 → 流式一致性四层追溯
+- [x] 整数 + 浮点数全覆盖（排名/计数/年份/得分）
+- [x] `src/evaluation/rag_traceability.py` — RAGTraceabilityEvaluator
+
+### H4 - 标准答案准确性 ✅
+- [x] LLM 输出数值 vs Golden Set 逐题比对（非关键词存在性检查）
+- [x] `src/evaluation/qa_standard.py` — QAStandardEvaluator
+
+### H5 - Dashboard-DB 一致性 ✅
+- [x] 18 项跨页检查：排名/布局/边界/摘要/维度/跨页一致性
+- [x] `src/evaluation/dashboard_consistency.py` — DashboardConsistencyChecker
+
+### 统一报告 ✅
+- [x] `src/evaluation/report.py` — ReportGenerator（加权评分 + Markdown 导出）
+- [x] `src/evaluation/runner.py` — run_all() 编排 H1-H5
 
 ---
 
@@ -330,10 +346,16 @@ green-computing-competition/
 │   ├── review/                      # 企划书评审
 │   │   ├── report_generator.py
 │   │   └── minimax_reviewer.py
-│   ├── evaluation/                  # 系统评估
-│   │   ├── runner.py
-│   │   ├── golden_test.py
-│   │   └── qa_quality.py
+│   ├── evaluation/                  # 五维系统评估
+│   │   ├── runner.py                #   评估编排 (H1-H5)
+│   │   ├── golden_test.py           #   H1-A Golden Set 字段一致性
+│   │   ├── lpa_validator.py         #   H1-B 稳定性/LPA 交叉验证
+│   │   ├── test_questions.py        #   共享测试题 + 标准答案
+│   │   ├── qa_quality.py            #   H2 问答质量
+│   │   ├── rag_traceability.py      #   H3 数字追溯
+│   │   ├── qa_standard.py           #   H4 标准答案准确性
+│   │   ├── dashboard_consistency.py #   H5 Dashboard-DB 一致性
+│   │   └── report.py                #   统一报告生成
 │   ├── mcp_servers/                 # 4 个 MCP Server
 │   │   ├── data_query/              #   8 工具
 │   │   ├── search/                  #   3 工具
