@@ -117,13 +117,20 @@ class DeepSeekLLM(BaseLLM):
                 max_tokens=kwargs.get("max_tokens", self.default_max_tokens),
                 stream=True,
             )
+            content_parts = []
             for chunk in stream:
                 delta = chunk.choices[0].delta if chunk.choices else None
                 content = delta.content if delta and delta.content else ""
                 finish = chunk.choices[0].finish_reason if chunk.choices else None
                 if content:
+                    content_parts.append(content)
                     yield StreamChunk(content=content, finish_reason=finish)
                 elif finish:
                     yield StreamChunk(content="", finish_reason=finish)
+
+            # 兜底：推理模型流式 content 可能为空（内容落在 reasoning_content），回退非流式
+            if not content_parts:
+                resp = self.chat(messages, trace=trace, **kwargs)
+                yield StreamChunk(content=resp.content, finish_reason="stop")
         except Exception as e:
             raise DeepSeekLLMError(f"[DeepSeek] 流式调用失败: {e}") from e
