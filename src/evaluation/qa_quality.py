@@ -113,7 +113,7 @@ class QAQualityEvaluator:
                     issues.append(f"术语违规 [{category}]: {term}")
 
         # 6. 证据检查
-        has_evidence = bool(re.search(r"(NAT_FINAL|2024|数据来源|检索结果)", answer))
+        has_evidence = bool(re.search(r"(已有数据|2024|数据来源|检索结果)", answer))
         if not has_evidence:
             issues.append("缺少数据来源引用")
 

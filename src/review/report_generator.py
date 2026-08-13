@@ -106,7 +106,7 @@ def _write_with_fpdf(filepath, proposal_name, target_province, sections, score):
     pdf.cell(0, 8, f"企划书: {proposal_name}", ln=True, align="C")
     pdf.cell(0, 8, f"目标省份: {target_province}", ln=True, align="C")
     pdf.cell(0, 8, f"生成日期: {datetime.now().strftime('%Y-%m-%d %H:%M')}", ln=True, align="C")
-    pdf.cell(0, 8, f"数据版本: NAT_FINAL", ln=True, align="C")
+    pdf.cell(0, 8, f"数据版本: 已有数据", ln=True, align="C")
     if score is not None:
         pdf.cell(0, 8, f"MiniMax 评审分数: {score}/10", ln=True, align="C")
     pdf.ln(10)
@@ -118,7 +118,7 @@ def _write_with_fpdf(filepath, proposal_name, target_province, sections, score):
     # 页脚
     pdf.set_y(-20)
     pdf.set_font(body_font, "", 8)
-    pdf.cell(0, 10, f"本报告由绿色算力智能决策助手自动生成 | 数据版本 NAT_FINAL | {datetime.now().strftime('%Y-%m-%d')}", align="C")
+    pdf.cell(0, 10, f"本报告由绿色算力智能决策助手自动生成 | 数据版本 已有数据 | {datetime.now().strftime('%Y-%m-%d')}", align="C")
 
     pdf.output(str(filepath))
 
@@ -144,7 +144,7 @@ def _write_html(filepath, proposal_name, target_province, sections, score):
 <h1>省域绿色算力承载能力评估<br>企划书咨询建议报告</h1>
 <div class="meta">
   <p>企划书: {proposal_name} | 目标省份: {target_province}</p>
-  <p>生成日期: {datetime.now().strftime('%Y-%m-%d %H:%M')} | 数据版本: NAT_FINAL</p>
+  <p>生成日期: {datetime.now().strftime('%Y-%m-%d %H:%M')} | 数据版本: 已有数据</p>
   {f'<p>MiniMax 评审分数: {score}/10</p>' if score else ''}
 </div>
 {sections_html}
@@ -165,7 +165,7 @@ def _write_pure_pdf(filepath, proposal_name, target_province, sections, score):
         f"企划书: {proposal_name}",
         f"目标省份: {target_province}",
         f"生成日期: {datetime.now().strftime('%Y-%m-%d %H:%M')}",
-        f"数据版本: NAT_FINAL",
+        f"数据版本: 已有数据",
     ]
     if score is not None:
         lines.append(f"MiniMax 评审分数: {score}/10")

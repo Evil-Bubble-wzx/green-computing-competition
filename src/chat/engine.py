@@ -100,9 +100,9 @@ class ChatEngine:
         # 7. 如果没搜到任何东西，加免责声明
         disclaimer = ""
         if search_result.fusion_count == 0:
-            disclaimer = "未在数据库、知识库或联网搜索中找到相关结果。以上回答仅基于大模型常识，非 NAT_FINAL 官方数据。"
+            disclaimer = "未在数据库、知识库或联网搜索中找到相关结果。以上回答仅基于大模型常识，非已有数据。"
         elif search_result.db_count == 0 and classification not in ("out_of_scope",):
-            disclaimer = "NAT_FINAL 数据库中未命中精确匹配，以上回答可能来自知识库或联网搜索。"
+            disclaimer = "已有数据库中未命中精确匹配，以上回答可能来自知识库或联网搜索。"
 
         return ChatResponse(
             answer=raw_answer,

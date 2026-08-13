@@ -38,7 +38,7 @@ def register_all(handler, pipeline, chat_engine, reviewer, settings):
         # 3) 构建报告章节
         sections = [
             ReportSection("一、企划书分析", resp.answer),
-            ReportSection("二、数据来源", "NAT_FINAL 数据版本，2024 年，31省省级评估"),
+            ReportSection("二、数据来源", "已有数据版本，2024 年，31省省级评估"),
         ]
         if resp.evidence:
             evidence_text = "\n".join(
@@ -151,7 +151,7 @@ def register_all(handler, pipeline, chat_engine, reviewer, settings):
 
             sections = [
                 ReportSection("一、企划书分析与建议", resp.answer),
-                ReportSection("二、数据来源", "NAT_FINAL 数据版本，2024 年"),
+                ReportSection("二、数据来源", "已有数据版本，2024 年"),
             ]
             pdf_path = generate_pdf_report(proposal_name, target_province, sections)
             return pdf_path, resp.answer
