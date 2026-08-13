@@ -113,6 +113,7 @@ class ChatEngine:
 
     def chat_stream(self, query: str, mode: str = "data_query"):
         """流式问答（生成器）— 完整响应后提取证据"""
+        self._last_stream_evidence = []
         classification = self._classify(query)
 
         if classification == "out_of_scope":

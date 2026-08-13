@@ -145,23 +145,22 @@ st.chat_message("user").markdown(prompt)
 st.session_state.msgs.append({"role": "user", "content": prompt})
 
 with st.chat_message("assistant"):
-    with st.spinner("思考中…"):
-        try:
-            engine = _get_engine()
-            resp = engine.chat(prompt, mode=mode)
-            answer = resp.answer if resp and resp.answer else ""
-            st.markdown(answer)
-            evidence = resp.evidence if resp and resp.evidence else []
-            if evidence:
-                with st.expander("📎 数据来源"):
-                    for e in evidence[:5]:
-                        if e:
-                            src = e.get("source", "?") or "?"
-                            title = e.get("title", "") or ""
-                            snip = (e.get("snippet", "") or "")[:150]
-                            st.caption(f"**[{src}]** {title}: {snip}")
-            st.session_state.msgs.append({"role": "assistant", "content": answer})
-        except Exception as exc:
-            import traceback
-            st.error(f"AI 引擎暂时不可用：{exc}")
-            st.code(traceback.format_exc())
+    try:
+        engine = _get_engine()
+        # 流式输出：边生成边显示，避免长时间无反馈
+        answer = st.write_stream(engine.chat_stream(prompt, mode=mode))
+        answer = answer or ""
+        evidence = getattr(engine, "_last_stream_evidence", None) or []
+        if evidence:
+            with st.expander("📎 数据来源"):
+                for e in evidence[:5]:
+                    if e:
+                        src = e.get("source", "?") or "?"
+                        title = e.get("title", "") or ""
+                        snip = (e.get("snippet", "") or "")[:150]
+                        st.caption(f"**[{src}]** {title}: {snip}")
+        st.session_state.msgs.append({"role": "assistant", "content": answer})
+    except Exception as exc:
+        import traceback
+        st.error(f"AI 引擎暂时不可用：{exc}")
+        st.code(traceback.format_exc())
