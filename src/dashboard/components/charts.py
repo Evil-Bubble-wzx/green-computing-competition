@@ -331,6 +331,7 @@ def layout_bubble(layout: list[dict]) -> go.Figure:
             x=[s["avg_score"]], y=[s["count"]], mode="markers+text",
             marker={"size": s["count"] * 8, "color": color, "opacity": 0.85},
             text=[s["layout_type"]], textposition="top center",
+            textfont={"size": 8},
             name=s["layout_type"], hovertemplate=f"<b>{s['layout_type']}</b><br>{s['count']}省 | 均分{s['avg_score']:.3f}<extra></extra>",
         ))
     fig.update_layout(**LAYOUT_BASE, height=360, showlegend=False,
