@@ -24,7 +24,7 @@ def show():
     c1, c2, c3, c4, c5 = st.columns(5)
     c1.metric("评估省份", "31")
     c2.metric("数据年份", "2016–2024")
-    c3.metric("2024 第一", f"{top1['省份']} ({top1['综合得分']:.4f})")
+    c3.metric("2024 第一", f"{top1['省份']} {top1['综合得分']:.3f}")
     c4.metric("高适宜承载区", f"{high_suit['count']} 省" if high_suit else "-")
     c5.metric("边界省份", f"{len(boundary)} 省")
 
@@ -46,7 +46,7 @@ def show():
                 "布局类型": s["layout_type"], "省份数": s["count"],
                 "平均得分": f"{s['avg_score']:.4f}", "绿色DC": s["green_dc_total"],
                 "枢纽": s["hub_count"],
-                "省份": "、".join(provs[:3]) + ("…" if len(provs) > 3 else ""),
+                "省份": "、".join(provs),
             })
         st.dataframe(rows, use_container_width=True, hide_index=True, height=220)
     with c2:
